@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QApplication, QLineEdit, QPushButton, QMessageBox, Q
 from tqdm import tqdm
 from login import LoginDialog
 
-version = '1.0.2'
+version = '1.0.3'
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -271,7 +271,19 @@ class MainWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    loginDialog = LoginDialog()
+    # 检查本地是否存在保存的用户名和密码
+    if os.path.isfile("credentials.txt"):
+        with open("credentials.txt", "r") as f:
+            credentials = f.read().split(",")
+            if len(credentials) == 2:
+                username, password = credentials
+                loginDialog = LoginDialog()
+                loginDialog.username_e.setText(username)
+                loginDialog.password_e.setText(password)
+            else:
+                loginDialog = LoginDialog()
+    else:
+        loginDialog = LoginDialog()
     if loginDialog.exec_() == QDialog.Accepted:
         print("Accepted")
         mainWindow = MainWindow()

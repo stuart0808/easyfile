@@ -22,7 +22,7 @@ def get_password(username):
 # 指定要返回文件信息的文件夹路径
 folder_path = 'D:\\share_folder'
 ip_add = '172.26.204.165'
-sever_ver = "1.0.2"
+sever_ver = "1.0.3"
 # 创建TCP Socket
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((ip_add, 8765))

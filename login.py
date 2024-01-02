@@ -29,12 +29,15 @@ class LoginDialog(QDialog):
         self.password_e.setEchoMode(QLineEdit.Password)
         self.password_e.setGeometry(150, 40, 200, 20)
         
+        self.remember_password = QtWidgets.QCheckBox("Remember Password", self) # 添加一个复选框
+        self.remember_password.setGeometry(10, 70, 150, 30)
+        
         self.verify_button = QPushButton("Verify", self)
-        self.verify_button.setGeometry(10, 70, 120, 30)
+        self.verify_button.setGeometry(170, 70, 120, 30)
         self.verify_button.clicked.connect(self.verifyActivation)
         
         self.cancel_button = QPushButton("Cancel", self)
-        self.cancel_button.setGeometry(150, 70, 120, 30)
+        self.cancel_button.setGeometry(300, 70, 120, 30)
         self.cancel_button.clicked.connect(self.reject)
 
     def accept(self) -> None:
@@ -69,6 +72,12 @@ class LoginDialog(QDialog):
         # 处理验证结果
         if response['status'] == 'success':
             QMessageBox.information(self, 'Login', response['message'])
+            
+            if self.remember_password.isChecked(): # 判断复选框的状态，是否记住密码
+                # 将用户名和密码保存到本地文件中
+                with open("credentials.txt", "w") as f:
+                    f.write(f"{self.username_e.text()},{self.password_e.text()}")
+            
             self.accept()
         else:
             QMessageBox.warning(self, 'Login', response['message'])
@@ -79,7 +88,21 @@ class LoginDialog(QDialog):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    loginDialog = LoginDialog()
+    
+    # 检查本地是否存在保存的用户名和密码
+    if os.path.isfile("credentials.txt"):
+        with open("credentials.txt", "r") as f:
+            credentials = f.read().split(",")
+            if len(credentials) == 2:
+                username, password = credentials
+                loginDialog = LoginDialog()
+                loginDialog.username_e.setText(username)
+                loginDialog.password_e.setText(password)
+            else:
+                loginDialog = LoginDialog()
+    else:
+        loginDialog = LoginDialog()
+    
     loginDialog.show()
 
     sys.exit(app.exec_())
