@@ -3,10 +3,13 @@ import socket
 import os
 import sys
 import json
-from PyQt5.QtWidgets import QLabel, QMainWindow, QTreeView, QFileSystemModel, QTableWidget,QTableWidgetItem
+from PyQt5.QtWidgets import QLabel, QMainWindow, QTreeView, QFileSystemModel, QTableWidget,QTableWidgetItem, QDialog
+from PyQt5.QtWidgets import QApplication, QLineEdit, QPushButton, QMessageBox, QProgressBar
 from tqdm import tqdm
+from login import LoginDialog
+
 version = '1.0.0'
-class MainWindow(QtWidgets.QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi()
@@ -174,7 +177,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def handleConnect(self):
         # 处理连接服务器操作
-        print('connect')
         try:
             # 创建TCP Socket
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -258,28 +260,35 @@ class MainWindow(QtWidgets.QMainWindow):
         print(self.cloud_file_name)
         # 在这里处理选中文件的路径
 
+
         
         
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    mainWindow = MainWindow()
-    mainWindow.show()
-    try:
-        # 创建TCP Socket
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect((mainWindow.ip, 8765))
-        client_socket.send("num".encode())
-        # 接收服务器的响应
-        confirmation = client_socket.recv(1024).decode()
-        client_socket.send(version.encode('utf-8'))
-        confirmation = client_socket.recv(1024).decode()
-        if confirmation == "ready":
-            print("已是最新版本")
-        if confirmation == "new":
-            print("有新版本")
-            #关闭窗口
-            sys.exit(1)
-    except Exception as e:
-        print('连接出错:', e)
-    sys.exit(app.exec_())
+    loginDialog = LoginDialog()
+    if loginDialog.exec_() == QDialog.Accepted:
+        print("Accepted")
+        mainWindow = MainWindow()
+        mainWindow.show()
+        try:
+            # 创建TCP Socket
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client_socket.connect((mainWindow.ip, 8765))
+            client_socket.send("num".encode())
+            # 接收服务器的响应
+            confirmation = client_socket.recv(1024).decode()
+            client_socket.send(version.encode('utf-8'))
+            confirmation = client_socket.recv(1024).decode()
+            if confirmation == "ready":
+                print("已是最新版本")
+            if confirmation == "new":
+                print("有新版本")
+                #关闭窗口
+                sys.exit(1)
+        except Exception as e:
+            print('连接出错:', e)
+        sys.exit(app.exec_())
+    else:
+        print("Rejected")
+        sys.exit(1)

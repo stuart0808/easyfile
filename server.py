@@ -3,6 +3,22 @@ import os
 import datetime
 import json
 
+def read_user_info():
+    user_info = {}
+    with open("user_info.txt", "r") as file:
+        lines = file.readlines()
+        for line in lines:
+            line = line.strip()
+            if line:
+                username, password = line.split("|")
+                user_info[username] = password
+    return user_info
+
+
+def get_password(username):
+    user_info = read_user_info()
+    return user_info.get(username)
+
 # 指定要返回文件信息的文件夹路径
 folder_path = 'D:\\share_folder'
 ip_add = '172.26.204.165'
@@ -90,3 +106,22 @@ while True:
         else:
             client_socket.send("new".encode())
             print("new")
+    elif command == "login":
+        client_socket.send("Login".encode())
+        request = client_socket.recv(1024).decode()
+        request = json.loads(request)
+        username = request['username']
+        password = request['password']
+        # 在用户信息中查找是否存在匹配的用户名和密码
+        stored_password = get_password(username)
+    
+        if stored_password and stored_password == password:
+            # 验证通过
+            response = {'status': 'success', 'message': 'Login successful'}
+        else:
+            # 验证失败
+            response = {'status': 'failure', 'message': 'Invalid username or password'}
+    
+        # 发送验证结果给客户端
+        response = json.dumps(response).encode()
+        client_socket.send(response)
