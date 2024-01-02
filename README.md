@@ -18,3 +18,6 @@ Optimize upload file details
 ## 1.0.3
 实现密码本地记忆功能
 Implement password local memory
+
+## 1.0.4
+优化服务端日志显示
