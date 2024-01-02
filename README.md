@@ -24,3 +24,7 @@ Implement password local memory
 添加服务器日志功能
 Optimize server record display;
 Add the server log function
+
+## 1.0.5
+重写server，实现多线程
+Rewrite the server to implement multithreading

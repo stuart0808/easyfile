@@ -19,9 +19,14 @@ def run_server():
     conn, addr = server_socket.accept()
     print(f'已连接: {addr}')
 
-    filename = 'C:\\Users\\f1370\\Desktop\\file\\main.py'  # 要发送的文件路径
+    filename = 'D:\\code_container\\easyfile\\main.py'  # 要发送的文件路径
     send_file(conn, filename)
-
+    rec = conn.recv(1024).decode()
+    print(rec)
+    filename = 'D:\\code_container\\easyfile\\login.py'  # 要发送的文件路径
+    send_file(conn, filename)
+    rec = conn.recv(1024).decode()
+    print(rec)
     conn.close()
     server_socket.close()
 

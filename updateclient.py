@@ -16,8 +16,13 @@ def run_client():
 
     filename = 'main.py'  # 下载文件保存的路径和文件名
     save_file(client_socket, filename)
+    client_socket.send(f'OK{filename}'.encode())
+    print(f'{filename}下载已完成')
 
-    print('文件下载已完成')
+    filename = 'login.py'  # 下载文件保存的路径和文件名
+    save_file(client_socket, filename)
+    client_socket.send(f'OK{filename}'.encode())
+    print(f'{filename}下载已完成')
 
     client_socket.close()
 

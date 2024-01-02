@@ -2,6 +2,7 @@ import socket
 import os
 from datetime import datetime
 import json
+from threading import Thread
 
 def read_user_info():
     user_info = {}
@@ -43,22 +44,7 @@ def print_status(status, ip_add, color):
         file.write(f"[{datetime.now()}] {ip_add}:8765 {status}")
         file.write('\n')
 
-# 指定要返回文件信息的文件夹路径
-folder_path = 'D:\\share_folder'
-ip_add = '172.26.204.165'
-sever_ver = "1.0.3"
-# 创建TCP Socket
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind((ip_add, 8765))
-server_socket.listen(5)
-
-while True:
-    print(f"\033[33m[{datetime.now()}]  Server is listening...")
-    # 接受客户端连接
-    client_socket, address = server_socket.accept()
-    print_status("connected", address, "green")
-    command = client_socket.recv(1024).decode()
-    print_status(f"发送指令:{command}", address, "reset")
+def handle_client(client_socket, address, command):
     if command == "l":
         file_list = []
 
@@ -126,6 +112,7 @@ while True:
         else:
             client_socket.send("new".encode())
             print_status(f"指令结束:{command}:客户端需要更新版本", address, "red")
+        client_socket.close()
     elif command == "login":
         client_socket.send("Login".encode())
         request = client_socket.recv(1024).decode()
@@ -147,3 +134,25 @@ while True:
         # 发送验证结果给客户端
         response = json.dumps(response).encode()
         client_socket.send(response)
+        client_socket.close()
+
+# 指定要返回文件信息的文件夹路径
+folder_path = 'D:\\share_folder'
+ip_add = '172.26.204.165'
+sever_ver = "1.0.3"
+# 创建TCP Socket
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind((ip_add, 8765))
+server_socket.listen(5)
+
+while True:
+    # 接受客户端连接
+    print(f"\033[33m[{datetime.now()}]  Server is listening...")
+    # 接受客户端连接
+    client_socket, address = server_socket.accept()
+    print_status("connected", address, "green")
+    command = client_socket.recv(1024).decode()
+    print_status(f"发送指令:{command}", address, "reset")
+    # 创建新的线程来处理客户端请求
+    t = Thread(target=handle_client, args=(client_socket, address, command))
+    t.start()  # 启动线程
