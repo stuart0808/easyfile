@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QApplication, QLineEdit, QPushButton, QMessageBox, Q
 from tqdm import tqdm
 from login import LoginDialog
 
-version = '1.0.0'
+version = '1.0.2'
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -42,14 +42,10 @@ class MainWindow(QMainWindow):
         self.download = QtWidgets.QPushButton(self.centralwidget)
         self.download.setGeometry(QtCore.QRect(630, 80, 75, 24))
         self.download.setObjectName("download")
-        self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
-        self.progressBar.setGeometry(QtCore.QRect(720, 50, 118, 23))
-        self.progressBar.setProperty("value", 0)
-        self.progressBar.setObjectName("progressBar")
-        self.progressBar_2 = QtWidgets.QProgressBar(self.centralwidget)
-        self.progressBar_2.setGeometry(QtCore.QRect(720, 80, 118, 23))
-        self.progressBar_2.setProperty("value", 0)
-        self.progressBar_2.setObjectName("progressBar_2")
+        self.select = QtWidgets.QPushButton(self.centralwidget)
+        self.select.setGeometry(QtCore.QRect(630, 110, 75, 24))
+        self.select.setObjectName("select")
+
         self.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(self)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 886, 22))
@@ -83,6 +79,7 @@ class MainWindow(QMainWindow):
         self.retranslateUi()
         self.upload.clicked.connect(self.handleUpload)
         self.download.clicked.connect(self.handleDownload)
+        self.select.clicked.connect(self.handleSelect)
         self.actionUpload.triggered.connect(self.handleUpload)
         self.actionRefresh.triggered.connect(self.handleRefresh)
         self.actionConnect_to_server.triggered.connect(self.handleConnect)
@@ -95,6 +92,7 @@ class MainWindow(QMainWindow):
         self.upload.setText(_translate("MainWindow", "Upload"))
         self.TitleLabel_2.setText(_translate("MainWindow", "Cloud File"))
         self.download.setText(_translate("MainWindow", "Download"))
+        self.select.setText(_translate("MainWindow", "Select"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.menuConnect.setTitle(_translate("MainWindow", "Connect"))
         self.menuSettings.setTitle(_translate("MainWindow", "Settings"))
@@ -102,6 +100,12 @@ class MainWindow(QMainWindow):
         self.actionRefresh.setText(_translate("MainWindow", "Refresh"))
         self.actionCheck_for_update.setText(_translate("MainWindow", "Check for update"))
         self.actionConnect_to_server.setText(_translate("MainWindow", "Connect to server"))
+    
+    def handleSelect(self):
+        # 文件筛选器
+        self.file_path, filetype = QtWidgets.QFileDialog.getOpenFileName(self, "选取文件", "./", "All Files (*);;Text Files (*.txt)")
+        print(self.file_path, filetype)
+        self.handleUpload()
 
     def handleUpload(self):
         # 处理上传操作
@@ -111,6 +115,7 @@ class MainWindow(QMainWindow):
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client_socket.connect((self.ip, 8765))
             client_socket.send("u".encode())
+            confirmation = client_socket.recv(1024).decode()
             # 判断文件是否存在
             if os.path.exists(self.file_path):
                 file_name = os.path.basename(self.file_path)

@@ -22,7 +22,7 @@ def get_password(username):
 # 指定要返回文件信息的文件夹路径
 folder_path = 'D:\\share_folder'
 ip_add = '172.26.204.165'
-sever_ver = "1.0.0"
+sever_ver = "1.0.2"
 # 创建TCP Socket
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((ip_add, 8765))
@@ -61,10 +61,10 @@ while True:
         client_socket.close()
     elif command == "u":
         # 发送确认消息
-        client_socket.send("ready".encode())
-        print("等待文件传输...")
+        client_socket.send("OK".encode())
         # 接收客户端上传的文件
         file_name = client_socket.recv(1024).decode()
+        client_socket.send("ready".encode())
         if file_name:
             # 下载文件
             with open(f"D:\\share_folder\\{file_name}", 'wb') as f:
@@ -114,14 +114,14 @@ while True:
         password = request['password']
         # 在用户信息中查找是否存在匹配的用户名和密码
         stored_password = get_password(username)
-    
+
         if stored_password and stored_password == password:
             # 验证通过
             response = {'status': 'success', 'message': 'Login successful'}
         else:
             # 验证失败
             response = {'status': 'failure', 'message': 'Invalid username or password'}
-    
+
         # 发送验证结果给客户端
         response = json.dumps(response).encode()
         client_socket.send(response)
