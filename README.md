@@ -20,4 +20,7 @@ Optimize upload file details
 Implement password local memory
 
 ## 1.0.4
-优化服务端日志显示
+优化服务端记录显示;
+添加服务器日志功能
+Optimize server record display;
+Add the server log function
