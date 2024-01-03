@@ -2,16 +2,63 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import socket
 import os
 import sys
-import json
+from PyQt5.QtCore import QTimer, QObject, pyqtSignal
 from PyQt5.QtWidgets import QLabel, QMainWindow, QTreeView, QFileSystemModel, QTableWidget,QTableWidgetItem, QDialog
 from PyQt5.QtWidgets import QApplication, QLineEdit, QPushButton, QMessageBox, QProgressBar
-from tqdm import tqdm
 from login import LoginDialog
+from client import upload, download, list, update
+from threading import Thread
+from PyQt5.QtCore import QThread, QRunnable, pyqtSlot, QTimer
+from PyQt5.QtWidgets import QApplication
 
-version = '1.0.3'
+version = '1.0.6'
+
+class WorkThread(QThread):
+    '''
+    operation:
+    =='1' UPLOAD
+    =='2' DOWNLOAD
+    =='3' LIST
+    =='4' VERSION
+    '''
+    def __init__(self, arg1 = None, arg2 = None, operation = 0):
+        super().__init__()
+        self.arg1 = arg1
+        self.arg2 = arg2
+        self.operation = operation
+    
+    def run(self):
+        if self.operation == '1':
+            self.handleUpload()
+        elif self.operation == '2':
+            self.handleDownload()
+        elif self.operation == '3':
+            self.showCloudFiles()
+        else:
+            pass
+
+
+    def handleUpload(self):
+        # 在子线程中执行的操作
+        upload(self.arg1)
+        print("Executing handleUpload in the worker thread")
+    def handleDownload(self):
+        download(self.arg1, self.arg2)
+        print("Executing handleDownload in the worker thread")
+    def showCloudFiles(self):
+        list()
+
 class MainWindow(QMainWindow):
+    refresh_list = pyqtSignal()
     def __init__(self):
         super().__init__()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.refresh_list.emit)
+        self.timer.start(5000)  # 5000 毫秒，即 5 秒
+
+        self.refresh_list.connect(self.showCloudFiles)
+        self.file_path = 'example.txt'
+        self.cloud_file_name = 'example.txt'
         self.setupUi()
         self.ip = '172.26.204.165'
 
@@ -81,8 +128,8 @@ class MainWindow(QMainWindow):
         self.download.clicked.connect(self.handleDownload)
         self.select.clicked.connect(self.handleSelect)
         self.actionUpload.triggered.connect(self.handleUpload)
-        self.actionRefresh.triggered.connect(self.handleRefresh)
-        self.actionConnect_to_server.triggered.connect(self.handleConnect)
+        self.actionRefresh.triggered.connect(self.showCloudFiles)
+        self.actionConnect_to_server.triggered.connect(self.showCloudFiles)
         self.actionCheck_for_update.triggered.connect(self.handleUpdate)
 
     def retranslateUi(self):
@@ -106,118 +153,33 @@ class MainWindow(QMainWindow):
         self.file_path, filetype = QtWidgets.QFileDialog.getOpenFileName(self, "选取文件", "./", "All Files (*);;Text Files (*.txt)")
         print(self.file_path, filetype)
         self.handleUpload()
+    
+    # def handleUpload(self):
+    #     # 处理上传操作
+    #     upload(self.file_path)
 
     def handleUpload(self):
         # 处理上传操作
-        print('upload')
-        try:
-            # 创建TCP Socket
-            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client_socket.connect((self.ip, 8765))
-            client_socket.send("u".encode())
-            confirmation = client_socket.recv(1024).decode()
-            # 判断文件是否存在
-            if os.path.exists(self.file_path):
-                file_name = os.path.basename(self.file_path)
-                print(file_name)
-                # 发送文件名到服务器
-                client_socket.send(file_name.encode('utf-8'))
-                print("发送文件名成功")
-                # 等待接收确认消息
-                confirmation = client_socket.recv(1024).decode()
-                print(confirmation)
-                if confirmation == "ready":
+        self.upthread = WorkThread(self.file_path, None, '1')
+        self.upthread.start()
 
-                    # 打开文件并上传
-                    with open(self.file_path, 'rb') as f:
-                        # 获取文件大小
-                        file_size = os.path.getsize(self.file_path)
-                        progress_bar = tqdm(f, total=file_size, unit='B', unit_scale=True)
-                        for data in f:
-                            client_socket.send(data)
-                            progress_bar.update(len(data))
-                        progress_bar.close()
-                    print("文件上传成功")
-                else:
-                    print("文件上传失败")
-            else:
-                print("文件不存在")
-        except Exception as e:
-            print('连接出错:', e)
-    
     def handleDownload(self):
         # 处理下载操作
-        print('download')
-        try:
-            # 创建TCP Socket
-            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client_socket.connect((self.ip, 8765))
-            client_socket.send("d".encode())
-            confirmation = client_socket.recv(1024).decode()
-            print(confirmation)
-            client_socket.send(self.cloud_file_name.encode('utf-8'))
-            # 接收服务器的响应
-            confirmation = client_socket.recv(1024).decode()
-            print(confirmation)
-            
-            if confirmation == "ready":
-                # 发送文件名给服务器
-                # 创建文件并接收数据
-                with open(self.cloud_file_name, 'wb') as f:
-                    while True:
-                        data = client_socket.recv(1024)
-                        if data == b'':
-                            break
-                        f.write(data)
-                print("文件接收完成")
-            else:
-                print("文件不存在")
-        except Exception as e:
-            print('连接出错:', e)
+        self.downthread = WorkThread(self.cloud_file_name, self.cloud_file_size, '2')
+        self.downthread.start()
 
-    def handleRefresh(self):
-        # 处理刷新操作
-        print('refresh')
-        pass
 
-    def handleConnect(self):
-        # 处理连接服务器操作
-        try:
-            # 创建TCP Socket
-            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client_socket.connect((self.ip, 8765))
-            client_socket.send("l".encode())
-            len_json = int(client_socket.recv(1024).decode())
-
-            file_info = ""
-
-            for row in range(round(len_json+1024/1024)):
-                # 接收文件信息
-
-                temp = client_socket.recv(1024).decode()
-                file_info += temp
-
-            # 解析JSON数据为Python对象
-            data = json.loads(file_info)
-
-            # 创建空的二维列表
-            file_list = []
-
-            # 遍历每个子列表
-            for sublist in data:
-                # 将子列表添加到二维列表
-                file_list.append(sublist)
-
-            print(file_list)
-            print(len(file_list))
-            
+    def showCloudFiles(self):
+        self.listthread = WorkThread(None, None, '3')
+        self.listthread.start()
+        file_list = list()
+        if file_list != -1:
             # 设置表格控件的行列数
             self.cloudfile.setRowCount(len(file_list))
             self.cloudfile.setColumnCount(3)
             self.cloudfile.setHorizontalHeaderLabels(['文件名', '大小', '修改时间'])
             self.cloudfile.clicked.connect(self.cloudfile_handle_click)
 
-            
             for row in range(len(file_list)):
                 file_info = file_list[row]
                 # 将文件信息显示在表格中
@@ -225,20 +187,12 @@ class MainWindow(QMainWindow):
                 self.cloudfile.setItem(row, 1, QTableWidgetItem(self.convert_file_size(file_info[1])))
                 self.cloudfile.setItem(row, 2, QTableWidgetItem(file_info[2]))
 
-            # 关闭Socket连接
-            client_socket.close()
-
-        except Exception as e:
-            print('连接出错:', e)
-
     def handleUpdate(self):
         # 处理检查更新操作
-        print('update')
-        pass
+        update()
     
     def localFlie(self):
         # 处理本地文件
-        
         self.local_flie.setRootPath("")
         self.localfile.setModel(self.local_flie)
         self.localfile.setRootIndex(self.local_flie.index(os.path.expanduser("~"))) # 设置根目录为用户主目录
@@ -262,7 +216,9 @@ class MainWindow(QMainWindow):
     
     def cloudfile_handle_click(self, index):
         self.cloud_file_name = self.cloudfile.item(index.row(), 0).text()
+        self.cloud_file_size = self.cloudfile.item(index.row(), 1).text()
         print(self.cloud_file_name)
+        print(self.cloud_file_size)
         # 在这里处理选中文件的路径
 
 
@@ -285,14 +241,13 @@ if __name__ == '__main__':
     else:
         loginDialog = LoginDialog()
     if loginDialog.exec_() == QDialog.Accepted:
-        print("Accepted")
         mainWindow = MainWindow()
         mainWindow.show()
         try:
             # 创建TCP Socket
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client_socket.connect((mainWindow.ip, 8765))
-            client_socket.send("num".encode())
+            client_socket.send("version".encode())
             # 接收服务器的响应
             confirmation = client_socket.recv(1024).decode()
             client_socket.send(version.encode('utf-8'))

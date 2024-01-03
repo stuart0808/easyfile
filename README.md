@@ -28,3 +28,9 @@ Add the server log function
 ## 1.0.5
 重写server，实现多线程
 Rewrite the server to implement multithreading
+
+## 1.0.6
+重写client，实现多线程;
+分离前端和服务函数
+Rewrite the client to implement multithreading;
+Separate front-end and service functions

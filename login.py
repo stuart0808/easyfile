@@ -53,7 +53,6 @@ class LoginDialog(QDialog):
         client_socket.connect(server_address)
         client_socket.send("login".encode())
         response = client_socket.recv(1024).decode()
-        print(response)
 
         # 构建请求字典对象
         request = {

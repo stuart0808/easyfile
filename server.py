@@ -4,6 +4,19 @@ from datetime import datetime
 import json
 from threading import Thread
 
+
+
+# 指定要返回文件信息的文件夹路径
+folder_path = 'D:\\share_folder'
+ip_add = '172.26.204.165'
+sever_ver = "1.0.6"
+# 创建TCP Socket
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind((ip_add, 8765))
+server_socket.listen(5)
+
+
+
 def read_user_info():
     user_info = {}
     with open("user_info.txt", "r") as file:
@@ -45,7 +58,7 @@ def print_status(status, ip_add, color):
         file.write('\n')
 
 def handle_client(client_socket, address, command):
-    if command == "l":
+    if command == "list":
         file_list = []
 
         # 获取文件夹中所有文件的信息
@@ -66,7 +79,7 @@ def handle_client(client_socket, address, command):
 
         # 关闭客户端连接
         client_socket.close()
-    elif command == "u":
+    elif command == "upload":
         # 发送确认消息
         client_socket.send("OK".encode())
         # 接收客户端上传的文件
@@ -84,7 +97,7 @@ def handle_client(client_socket, address, command):
         else:
             print_status(f"指令异常:{command}:文件名为空", address, "red")
         client_socket.close()
-    elif command == "d":
+    elif command == "download":
         client_socket.send("OK".encode())
         # 接收客户端要下载的文件名
         file_name = client_socket.recv(1024).decode()
@@ -103,7 +116,7 @@ def handle_client(client_socket, address, command):
         else:
             print_status(f"指令结束:{command}:文件名为空", address, "red")
         client_socket.close()
-    elif command == "num":
+    elif command == "version":
         client_socket.send("Checking".encode())
         client_ver = client_socket.recv(1024).decode()
         if client_ver == sever_ver:
@@ -135,15 +148,11 @@ def handle_client(client_socket, address, command):
         response = json.dumps(response).encode()
         client_socket.send(response)
         client_socket.close()
+    else:
+        print_status(f"指令异常:{command}:无效指令", address, "red")
+        client_socket.close()
 
-# 指定要返回文件信息的文件夹路径
-folder_path = 'D:\\share_folder'
-ip_add = '172.26.204.165'
-sever_ver = "1.0.3"
-# 创建TCP Socket
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind((ip_add, 8765))
-server_socket.listen(5)
+
 
 while True:
     # 接受客户端连接
