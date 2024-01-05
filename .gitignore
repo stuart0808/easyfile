@@ -1,0 +1,6 @@
+user_info.txt
+build
+dist
+main.spec
+__pycache__/
+severlog.txt
