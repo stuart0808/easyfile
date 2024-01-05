@@ -5,8 +5,8 @@ import sys
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal
 from PyQt5.QtWidgets import QLabel, QMainWindow, QTreeView, QFileSystemModel, QTableWidget,QTableWidgetItem, QDialog
 from PyQt5.QtWidgets import QApplication, QLineEdit, QPushButton, QMessageBox, QProgressBar
-from login import LoginDialog
-from client import upload, download, list, update
+from client.login import LoginDialog
+from client.client import upload, download, list, update
 from threading import Thread
 from PyQt5.QtCore import QThread, QRunnable, pyqtSlot, QTimer
 from PyQt5.QtWidgets import QApplication
