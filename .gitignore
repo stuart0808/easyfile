@@ -1,6 +1,5 @@
-user_info.txt
-build
-dist
-main.spec
-__pycache__/
+client\__pycache__
+credentials.txt
+__pycache__
 severlog.txt
+user_info.txt

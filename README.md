@@ -3,6 +3,9 @@ Use socket to exchange files
 
 # Version
 
+开始时间：2023.12
+Start Time：2023.12
+
 ## 1.0.0
 easyfile实现C/S模式下文件传输功能
 easyfile implements the file transfer function in C/S mode
@@ -34,3 +37,7 @@ Rewrite the server to implement multithreading
 分离前端和服务函数
 Rewrite the client to implement multithreading;
 Separate front-end and service functions
+
+## 1.1.0
+实现文件拖拽上传和下载文件夹选择操作
+Implement file drag-and-drop upload and download folder selection operations

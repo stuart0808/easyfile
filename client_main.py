@@ -21,10 +21,11 @@ class WorkThread(QThread):
     =='3' LIST
     =='4' VERSION
     '''
-    def __init__(self, arg1 = None, arg2 = None, operation = 0):
+    def __init__(self, arg1 = None, arg2 = None, arg3 = None, operation = '1'):
         super().__init__()
         self.arg1 = arg1
         self.arg2 = arg2
+        self.arg3 = arg3
         self.operation = operation
     
     def run(self):
@@ -43,7 +44,7 @@ class WorkThread(QThread):
         upload(self.arg1)
         print("Executing handleUpload in the worker thread")
     def handleDownload(self):
-        download(self.arg1, self.arg2)
+        download(self.arg1, self.arg2, self.arg3)
         print("Executing handleDownload in the worker thread")
     def showCloudFiles(self):
         list()
@@ -52,6 +53,9 @@ class MainWindow(QMainWindow):
     refresh_list = pyqtSignal()
     def __init__(self):
         super().__init__()
+
+        # 调用Drops方法
+        self.setAcceptDrops(True)
         self.timer = QTimer()
         self.timer.timeout.connect(self.refresh_list.emit)
         self.timer.start(5000)  # 5000 毫秒，即 5 秒
@@ -59,12 +63,13 @@ class MainWindow(QMainWindow):
         self.refresh_list.connect(self.showCloudFiles)
         self.file_path = 'example.txt'
         self.cloud_file_name = 'example.txt'
+        self.path = os.path.dirname(os.path.abspath(__file__))
         self.setupUi()
         self.ip = '172.26.204.165'
 
     def setupUi(self):
         self.setObjectName("MainWindow")
-        self.resize(886, 600)
+        self.resize(886, 800)
         self.centralwidget = QtWidgets.QWidget(self)
         self.centralwidget.setObjectName("centralwidget")
 
@@ -92,6 +97,16 @@ class MainWindow(QMainWindow):
         self.select = QtWidgets.QPushButton(self.centralwidget)
         self.select.setGeometry(QtCore.QRect(630, 110, 75, 24))
         self.select.setObjectName("select")
+        self.choose = QtWidgets.QPushButton(self.centralwidget)
+        self.choose.setGeometry(QtCore.QRect(630, 140, 75, 24))
+        self.choose.setObjectName("choose")
+        self.TitleLabel_3 = QLabel(self.centralwidget)
+        self.TitleLabel_3.setGeometry(QtCore.QRect(10, 600, 1240, 38))
+        self.TitleLabel_3.setObjectName("TitleLabel_3")
+
+        self.console_output = QtWidgets.QTextEdit(self.centralwidget)
+        self.console_output.setGeometry(QtCore.QRect(10, 630, 800, 100))
+        self.console_output.setObjectName("console_output")
 
         self.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(self)
@@ -127,10 +142,12 @@ class MainWindow(QMainWindow):
         self.upload.clicked.connect(self.handleUpload)
         self.download.clicked.connect(self.handleDownload)
         self.select.clicked.connect(self.handleSelect)
+        self.choose.clicked.connect(self.handleChoose)
         self.actionUpload.triggered.connect(self.handleUpload)
         self.actionRefresh.triggered.connect(self.showCloudFiles)
         self.actionConnect_to_server.triggered.connect(self.showCloudFiles)
         self.actionCheck_for_update.triggered.connect(self.handleUpdate)
+
 
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
@@ -138,8 +155,10 @@ class MainWindow(QMainWindow):
         self.TitleLabel.setText(_translate("MainWindow", "Local File"))
         self.upload.setText(_translate("MainWindow", "Upload"))
         self.TitleLabel_2.setText(_translate("MainWindow", "Cloud File"))
+        self.TitleLabel_3.setText(_translate("MainWindow", f"文件将存储在：{self.path}"))
         self.download.setText(_translate("MainWindow", "Download"))
         self.select.setText(_translate("MainWindow", "Select"))
+        self.choose.setText(_translate("MainWindow", "Choose"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.menuConnect.setTitle(_translate("MainWindow", "Connect"))
         self.menuSettings.setTitle(_translate("MainWindow", "Settings"))
@@ -160,17 +179,19 @@ class MainWindow(QMainWindow):
 
     def handleUpload(self):
         # 处理上传操作
-        self.upthread = WorkThread(self.file_path, None, '1')
+        self.upthread = WorkThread(self.file_path, None, None, '1')
         self.upthread.start()
+        self.console_output.append(f"开始上传：{self.file_path}")
 
     def handleDownload(self):
         # 处理下载操作
-        self.downthread = WorkThread(self.cloud_file_name, self.cloud_file_size, '2')
+        self.downthread = WorkThread(self.cloud_file_name, self.cloud_file_size, self.path, '2')
         self.downthread.start()
+        self.console_output.append(f"开始下载：{self.cloud_file_name}")
 
 
     def showCloudFiles(self):
-        self.listthread = WorkThread(None, None, '3')
+        self.listthread = WorkThread(None, None, None, '3')
         self.listthread.start()
         file_list = list()
         if file_list != -1:
@@ -202,7 +223,8 @@ class MainWindow(QMainWindow):
         self.file_path = self.local_flie.filePath(index)
         
         if os.path.isfile(self.file_path):
-            print(self.file_path)  # 在这里处理选中文件的路径
+            pass
+            # print(self.file_path)  # 在这里处理选中文件的路径
 
     def convert_file_size(self, file_size):
         units = ['B', 'KB', 'MB', 'GB', 'TB']
@@ -217,9 +239,26 @@ class MainWindow(QMainWindow):
     def cloudfile_handle_click(self, index):
         self.cloud_file_name = self.cloudfile.item(index.row(), 0).text()
         self.cloud_file_size = self.cloudfile.item(index.row(), 1).text()
-        print(self.cloud_file_name)
-        print(self.cloud_file_size)
+        # print(self.cloud_file_name)
+        # print(self.cloud_file_size)
         # 在这里处理选中文件的路径
+
+    def dragEnterEvent(self, evn):
+        # 鼠标放开函数事件
+        evn.accept()
+ 
+    # 鼠标放开执行
+    def dropEvent(self, evn):
+        temp = evn.mimeData().text()
+        self.file_path = temp.replace('file:///', '')
+        print(self.file_path)
+        QMessageBox.information(self, 'Upload Information', 'prepare to upload')
+        self.handleUpload()
+
+    def handleChoose(self):
+        # 处理选择操作
+        self.path = QtWidgets.QFileDialog.getExistingDirectory(self, "选取文件夹", "./")
+        self.TitleLabel_3.setText(f"文件将存储在：{self.path}")
 
 
         
@@ -228,8 +267,8 @@ class MainWindow(QMainWindow):
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     # 检查本地是否存在保存的用户名和密码
-    if os.path.isfile("credentials.txt"):
-        with open("credentials.txt", "r") as f:
+    if os.path.isfile("client\\credentials.txt"):
+        with open("client\\credentials.txt", "r") as f:
             credentials = f.read().split(",")
             if len(credentials) == 2:
                 username, password = credentials

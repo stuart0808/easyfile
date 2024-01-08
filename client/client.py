@@ -83,38 +83,10 @@ def upload(file_path):
     except Exception as e:
         print_status(f"连接出错:{e}", "red")
 
-# def download(cloud_file_name, cloud_file_size):
-#     # 处理下载操作
-#     try:
-#         # 创建TCP Socket
-#         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#         client_socket.connect((IP, 8765))
-#         client_socket.send("download".encode())
-#         print_status(f"发送指令:download", "reset")
-#         confirmation = client_socket.recv(1024).decode()
-#         client_socket.send(cloud_file_name.encode('utf-8'))
-#         # 接收服务器的响应
-#         confirmation = client_socket.recv(1024).decode()
-        
-#         if confirmation == "ready":
-#             # 发送文件名给服务器
-#             # 创建文件并接收数据
-#             with open(cloud_file_name, 'wb') as f:
-#                 while True:
-#                     data = client_socket.recv(1024)
-#                     if data == b'':
-#                         break
-#                     f.write(data)
-#             print_status(f"指令结束:download:文件接收完成", "reset")
-#         else:
-#             print_status(f"指令结束:download:文件不存在", "red")
-#     except Exception as e:
-#         print_status(f"连接出错:{e}", "red")
-
-def download(cloud_file_name, cloud_file_size):
+def download(cloud_file_name, cloud_file_size, path):
     # 将文件大小转换为字节数
     file_size_bytes = humanfriendly.parse_size(cloud_file_size)
-
+    path = path + '/' + cloud_file_name
     # 处理下载操作
     try:
         # 创建TCP Socket
@@ -130,7 +102,7 @@ def download(cloud_file_name, cloud_file_size):
         if confirmation == "ready":
             # 发送文件名给服务器
             # 创建文件并接收数据
-            with open(cloud_file_name, 'wb') as f, tqdm(total=file_size_bytes, unit='B', unit_scale=True) as pbar:
+            with open(path, 'wb') as f, tqdm(total=file_size_bytes, unit='B', unit_scale=True) as pbar:
                 while True:
                     data = client_socket.recv(1024)
                     if data == b'':

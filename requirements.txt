@@ -1,3 +1,4 @@
 PyQt5==5.15.10
 PyQt5_sip==12.13.0
 tqdm==4.66.1
+humanfriendly==10.0

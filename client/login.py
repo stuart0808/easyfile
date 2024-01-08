@@ -74,7 +74,7 @@ class LoginDialog(QDialog):
             
             if self.remember_password.isChecked(): # 判断复选框的状态，是否记住密码
                 # 将用户名和密码保存到本地文件中
-                with open("credentials.txt", "w") as f:
+                with open("client\\credentials.txt", "w") as f:
                     f.write(f"{self.username_e.text()},{self.password_e.text()}")
             
             self.accept()
@@ -89,8 +89,8 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     
     # 检查本地是否存在保存的用户名和密码
-    if os.path.isfile("credentials.txt"):
-        with open("credentials.txt", "r") as f:
+    if os.path.isfile("client\\credentials.txt"):
+        with open("client\\credentials.txt", "r") as f:
             credentials = f.read().split(",")
             if len(credentials) == 2:
                 username, password = credentials
